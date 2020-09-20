@@ -1,73 +1,81 @@
 import jieba
-import jieba.analyse
 import numpy as np
-import math
+import jieba.analyse
+import os
 import re
 import sys
+import math
+
+
 # 命令行获取绝对路径
 path1 = sys.argv[1]
 path2 = sys.argv[2]
 path3 = sys.argv[3]
 
-def read(name):
-    file=open(name,"r",encoding="utf-8")
+def read_txt(content):
+    
+    #读入原文本与抄袭文本
+    doc=open(content,'r',encoding="utf-8")
     r = '[’!"#$%&\'()*+,-.<=>?@[\\]^_`{|}~\n。！， ]+'
-    word=file.read()
-    word=re.sub(r,'',word) #去除标点符号
-    file.close()
-    return word
-def print():
-    temp_txt = open(path3,'w',encoding="utf-8")
+    text = doc.read()
+    text = re.sub(r,' ',word)
+    doc.close()
+    return text
+
+def print_txt():
     sim=get_similarity(path1,path2)
-    ans=("%.2f" % sim)
+    print(sim)
+    #以字符串形式写入
+    ans=("%.2f"%sim)
+    temp_txt = open(path3,'w',encoding='utf-8')
     temp_txt.write(str(ans))
     temp_txt.close()
-
-
-def get_vector(text1,text2):
-    # 分词
+   
+def get_similiarity(content1,content2):
     
-    words1 = jieba.cut(read(text1))
-    words2 = jieba.cut(read(text2))
-    list_word1 = (','.join(words1)).split(',')
-    list_word2 = (','.join(words2)).split(',')
+
+    # 分词
+    words1 = jieba.cut(content1)
+    words2 = jieba.cut(content2)
+    content_word1 = (','.join(words1)).split(',')
+    content_word2 = (','.join(words2)).split(',')
 
     # 列出所有的词,取并集
-    key_word = list(set(list_word1 + list_word2))
+    words_key = list(set(content_word1 + content_word2))
+    
+    
+    
     # 给定形状和类型的用0填充的矩阵存储向量
-    vector1 = np.zeros(len(key_word))
-    vector2 = np.zeros(len(key_word))
+    vect1 = np.zeros(len(words_key))
+    vect2 = np.zeros(len(words_key))
 
     # 计算词频
     # 依次确定向量的每个位置的值
-    for i in range(len(key_word)):
+    for i in range(len(words_key)):
         # 遍历key_word中每个词在句子中的出现次数
-        for j in range(len(list_word1)):
-            if key_word[i] == list_word1[j]:
-                vector1[i] += 1
-        for k in range(len(list_word2)):
-            if key_word[i] == list_word2[k]:
-                vector2[i] += 1
-    # 输出向量
-    return vector1,vector2
+        for j in range(len(content_word1)):
+            if words_key[i] == content_word1[j]:
+                vect1[i] += 1
+        for k in range(len(content_word2)):
+            if words_key[i] == content_word2[k]:
+                vect2[i] += 1      
 
+     # 计算余弦相似度
+    sum = 0
+    sq1 = 0
+    sq2 = 0
+    for i in range(len(vect1)):
+        sum += vect1[i] * vect2[i]
+        sq1 += pow(vect1[i], 2)
+        sq2 += pow(vect2[i], 2)
+    try:
+        similiarity = round(float(sum) / (math.sqrt(sq1) * math.sqrt(sq2)), 2)
+    except ZeroDivisionError:
+        similiarity = 0.0
+    return similiarity
 
-def numerator(vector1, vector2):
-    #分子
-    return sum(a * b for a, b in zip(vector1, vector2))
-
-def denominator(vector):
-    #分母
-    return math.sqrt(sum(a * b for a,b in zip(vector, vector)))
-
-def run(vector1, vector2):
-    return numerator(vector1,vector2) / (denominator(vector1) * denominator(vector2))
-
-def get_similarity(text1,text2):
-    vectors = get_vector(text1,text2)
-    # 相似度
-    similarity = run(vector1=vectors[0], vector2=vectors[1])
-    return similarity
-
+    
 if __name__ == '__main__':
-      print()
+    
+    print_txt()
+
